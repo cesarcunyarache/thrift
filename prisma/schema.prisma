@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL_PRO")
+}
+
+model Cuentas {
+  id      String  @id @default(uuid())
+  plaidId String?
+  nombre  String
+  userId  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transacciones Transacciones[]
+}
+
+model Categorias {
+  id     String @id @default(uuid())
+  nombre String
+  userId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transacciones Transacciones[]
+  presupuesto   Presupuestos?
+}
+
+model Presupuestos {
+  id          String  @id @default(uuid())
+  montoMaximo Decimal
+  userId      String
+
+  categoriaId String     @unique
+  categoria   Categorias @relation(fields: [categoriaId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  alertas Alertas[]
+}
+
+model Transacciones {
+  id           String   @id @default(uuid())
+  monto        Int
+  beneficiario String
+  notas        String? 
+  fecha        DateTime
+
+  cuentaId String
+  cuenta   Cuentas @relation(fields: [cuentaId], references: [id])
+
+  categoriaId String?
+  categoria   Categorias? @relation(fields: [categoriaId], references: [id])
+  userId      String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Alertas {
+  id          String  @id @default(uuid())
+  descripcion String
+  tipo        String
+  umbral      Decimal
+  userId      String
+
+  presupuestoId String
+  presupuesto   Presupuestos @relation(fields: [presupuestoId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Recordatorios {
+  id          String       @id @default(uuid())
+  descripcion String
+  fecha       DateTime
+  recurrencia Recurrencia?
+  userId      String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Recurrencia {
+  DIARIO
+  SEMANAL
+  MENSUAL
+  ANUAL
+}
