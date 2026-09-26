@@ -1,0 +1,165 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Cuentas {
+  id      String  @id @default(uuid())
+  plaidId String?
+  nombre  String
+  userId  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transacciones Transacciones[]
+}
+
+model Categorias {
+  id     String @id @default(uuid())
+  nombre String
+  userId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transacciones Transacciones[]
+  presupuesto   Presupuestos[]
+}
+
+model Presupuestos {
+  id          String  @id @default(uuid())
+  userId      String
+  descripcion String?
+  monto       Int
+
+  categoriaId String
+  categoria   Categorias @relation(fields: [categoriaId], references: [id])
+
+  periodo     Periodo
+  recurrencia Boolean? @default(false)
+  fechaInicio DateTime
+  fechaFin    DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  recordatorios Recordatorios[]
+}
+
+model Transacciones {
+  id           String   @id @default(uuid())
+  monto        Int
+  beneficiario String
+  notas        String?
+  fecha        DateTime
+
+  cuentaId String
+  cuenta   Cuentas @relation(fields: [cuentaId], references: [id])
+
+  categoriaId String?
+  categoria   Categorias? @relation(fields: [categoriaId], references: [id])
+  userId      String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Recordatorios {
+  id          String             @id @default(uuid())
+  userId      String
+  titulo      String
+  descripcion String?
+  estado      EstadoRecordatorio
+  fecha       DateTime
+  activo      DateTime?
+  periodo     Periodo?
+  recurrencia Boolean?           @default(false)
+
+  presupuestoId String?
+  presupuesto   Presupuestos? @relation(fields: [presupuestoId], references: [id])
+  umbral        Decimal?
+  monto         Int?
+  emailId       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  notificaciones Notificaciones[]
+}
+
+model Notificaciones {
+  id     String @id @default(uuid())
+  userId String
+
+  recordatorioId String?
+  recordatorio   Recordatorios? @relation(fields: [recordatorioId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Comentarios {
+  id         String  @id @default(uuid())
+  userId     String
+  nombre     String
+  email      String
+  urlImagen  String?
+  comentario String  @db.Text
+  esVisible  Boolean @default(false) @map("visible")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([esVisible, createdAt])
+}
+
+model Preguntas {
+  id       String @id @default(uuid())
+  pregunta String
+
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  respuestas Respuestas[]
+}
+
+model Respuestas {
+  id        String @id @default(uuid())
+  userId    String
+  respuesta String
+
+  preguntaId String
+  pregunta   Preguntas @relation(fields: [preguntaId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Periodo {
+  DIARIO
+  SEMANAL
+  MENSUAL
+  TRIMESTRAL
+  ANUAL
+  PERSONALIZADO
+}
+
+enum EstadoRecordatorio {
+  PENDIENTE
+  PROXIMO
+  PROXIMO_RECIBIDO
+  EN_PROCESO
+  REALIZADO
+  VENCIDO
+  CANCELADO
+}
